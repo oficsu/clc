@@ -3,6 +3,11 @@ Curious Loopholed Counter
 
 This library exploits C++ loophole to allow different template instantiation each time in C++11
 
+Dependencies
+------------
+
+Now we use [Boost Preprocessor](https://www.boost.org/doc/libs/release/libs/preprocessor/) for generate some internal boilerplate code
+
 Supported Compilers
 -------------------
 
@@ -22,5 +27,7 @@ cd clc
 mkdir build && cd build
 cmake -D CMAKE_INSTALL_PREFIX=/opt/clc ..
 cmake --build . --target install
-
 ```
+
+Licensed under the [Boost Software License](LICENSE.txt)
+--------------------------------------------------------
