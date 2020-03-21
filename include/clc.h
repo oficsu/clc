@@ -60,7 +60,7 @@ namespace clc
         #endif
 
         #define CURIOUS_LOOPHOLED_COUNTER_SUM(z, n, data)  + _##n
-        #define CURIOUS_LOOPHOLED_COUNTER_UP_TO_ONE_SEQUENCE(z, n, data) size_t _##n = up_to_one<0+ BOOST_PP_REPEAT(n, CURIOUS_LOOPHOLED_COUNTER_SUM,)>(n),
+        #define CURIOUS_LOOPHOLED_COUNTER_UP_TO_ONE_SEQUENCE(z, n, data) std::size_t _##n = up_to_one<0+ BOOST_PP_REPEAT(n, CURIOUS_LOOPHOLED_COUNTER_SUM,)>(n),
         #define CURIOUS_LOOPHOLED_COUNTER_SEQUENCE(n) BOOST_PP_REPEAT_FROM_TO(1, n, CURIOUS_LOOPHOLED_COUNTER_UP_TO_ONE_SEQUENCE, 1)
 
         constexpr std::size_t offset = ((2 + CURIOUS_LOOPHOLED_COUNTER_LIMIT - 1) * CURIOUS_LOOPHOLED_COUNTER_LIMIT) / 2 + 1;
