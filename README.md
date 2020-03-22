@@ -6,7 +6,7 @@ This library exploits C++ loophole to allow different template instantiation eac
 Dependencies
 ------------
 
-Now we use [Boost Preprocessor](https://www.boost.org/doc/libs/release/libs/preprocessor/) for generate some internal boilerplate code
+There are no dependencies from now
 
 Supported Compilers
 -------------------
