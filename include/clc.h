@@ -22,10 +22,7 @@ namespace clc
         template<
             typename Tag,
             std::size_t V>
-        struct declarator {
-            enum {
-                value = V
-            };
+        struct declarator : std::integral_constant<std::size_t, V>{
             friend constexpr std::size_t get(declarator<Tag, V>);
         };
 
@@ -60,14 +57,12 @@ namespace clc
         struct force_null {};
 
         template<typename Tag>
-        struct is_null_forced {
-            enum { value = 0 };
-        };
+        struct is_null_forced
+                : std::integral_constant<bool, false> {};
 
         template<>
-        struct is_null_forced<force_null> {
-            enum { value = 1 };
-        };
+        struct is_null_forced<force_null>
+                : std::integral_constant<bool, true> {};
 
         template<typename T1, typename T2>
         constexpr inline std::size_t summator(const T1& t1, const T2& t2) {
