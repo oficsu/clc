@@ -19,169 +19,98 @@ namespace clc
 {
     namespace detail
     {
-        template<
-            typename Tag,
-            std::size_t V>
-        struct declarator : std::integral_constant<std::size_t, V>{
-            friend constexpr std::size_t get(declarator<Tag, V>);
+        enum class unit { value };
+
+        template<typename Tag>
+        struct declarator {
+            friend constexpr unit get(declarator);
         };
 
-        template<
-            typename Tag,
-            typename Src>
+        template<typename Tag, typename Declarator>
         struct infector {
-            friend constexpr std::size_t get(Src) {
-                return Src::value + 1;
+            friend constexpr unit get(Declarator) {
+                return unit::value;
             }
         };
 
-        template<
-            typename Tag,
-            std::size_t Index = 0>
-        constexpr auto up_to_one(float k) -> std::size_t {
-            using t = decltype(infector<Tag, declarator<Tag, Index>>{});
-            return get(declarator<Tag, Index>()) + static_cast<std::size_t>(k);
-        };
-
-        template<
-            typename Tag,
-            std::size_t Index = 0,
-            std::size_t Next = get(declarator<Tag, Index>{})>
-        constexpr std::size_t up_to_one(int i) {
-            return up_to_one<Tag, Next>(i);
-        };
-
-        template<typename InnerTag, std::size_t Number>
-        struct tag {};
-
-        struct force_null {};
-
         template<typename Tag>
-        struct is_null_forced
-                : std::integral_constant<bool, false> {};
-
-        template<>
-        struct is_null_forced<force_null>
-                : std::integral_constant<bool, true> {};
-
-        template<typename T1, typename T2>
-        constexpr inline std::size_t summator(const T1& t1, const T2& t2) {
-            return t1 + t2;
-        }
-
-        template<typename T1, typename... T2>
-        constexpr inline std::size_t summator(const T1& t1, const T2&... t2) {
-            return t1 + summator(t2...);
-        }
-
-        template<typename Tag, std::size_t Offset, std::size_t... Values>
-        struct summary_with_offset {
-            enum { value = is_null_forced<Tag>::value ? 0 : summator(Values...) - Offset };
+        constexpr bool binary_descending_impl(float) {
+            return sizeof(infector<Tag, declarator<Tag>>);
         };
 
-        template<typename Tag, std::size_t... Values>
-        struct summary : summary_with_offset <Tag, 0, Values...> {};
-
-        template<
-            typename Tag,
-            std::size_t _0 = up_to_one<tag<Tag, 0>>(1),
-            std::size_t _1 = up_to_one<tag<Tag, _0>>(2),
-            std::size_t _2 = up_to_one<tag<Tag, _0 + _1>>(3),
-            std::size_t _3 = up_to_one<tag<Tag, _2 + _1 + _0>>(4),
-            std::size_t _4 = up_to_one<tag<Tag, _3 + _2 + _1 + _0>>(5),
-            std::size_t _5 = up_to_one<tag<Tag, _4 + _3 + _2 + _1 + _0>>(6),
-            std::size_t _6 = up_to_one<tag<Tag, _5 + _4 + _3 + _2 + _1 + _0>>(7),
-            std::size_t _7 = up_to_one<tag<Tag, _6 + _5 + _4 + _3 + _2 + _1 + _0>>(8),
-            std::size_t _8 = up_to_one<tag<Tag, _7 + _6 + _5 + _4 + _3 + _2 + _1 + _0>>(9)>
-        constexpr std::size_t up_to_9() {
-            return summary_with_offset<Tag, 54, _0, _1, _2, _3, _4, _5, _6, _7, _8>::value;
+        template<typename Tag, unit = get(declarator<Tag>{})>
+        constexpr bool binary_descending_impl(int) {
+            return false;
         };
 
-        template<std::size_t Expected, std::size_t Now, typename Tag>
-        using wait_for = typename std::conditional<(Now < Expected), force_null, Tag>::type;
+        struct default_tag {};
 
-        template<std::size_t Index, typename Tag>
-        using wait_for_9 = wait_for<9, Index, Tag>;// typename std::conditional<(Index < 9), force_null, Tag>::type;
-
-        template<
-            typename Tag,
-            std::size_t _0 = up_to_9<wait_for_9<9,  tag<Tag, 1>>>(),
-            std::size_t _1 = up_to_9<wait_for_9<_0, tag<Tag, 2>>>(),
-            std::size_t _2 = up_to_9<wait_for_9<_1, tag<Tag, 3>>>(),
-            std::size_t _3 = up_to_9<wait_for_9<_2, tag<Tag, 4>>>(),
-            std::size_t _4 = up_to_9<wait_for_9<_3, tag<Tag, 5>>>(),
-            std::size_t _5 = up_to_9<wait_for_9<_4, tag<Tag, 6>>>(),
-            std::size_t _6 = up_to_9<wait_for_9<_5, tag<Tag, 7>>>(),
-            std::size_t _7 = up_to_9<wait_for_9<_6, tag<Tag, 8>>>(),
-            std::size_t _8 = up_to_9<wait_for_9<_7, tag<Tag, 9>>>()>
-        constexpr std::size_t up_to_81() {
-            return summary<Tag, _0, _1, _2, _3, _4, _5, _6, _7, _8>::value;
+        template<typename Tag, bool value = binary_descending_impl<Tag>(42)>
+        constexpr bool binary_descending() {
+            return value;
         };
 
-        template<std::size_t Index, typename Tag>
-        using wait_for_81 = wait_for<81, Index, Tag>;
+        struct force_true {};
 
-        template<
-            typename Tag,
-            std::size_t _0 = up_to_81<wait_for_81<81, tag<Tag, 1>>>(),
-            std::size_t _1 = up_to_81<wait_for_81<_0, tag<Tag, 2>>>(),
-            std::size_t _2 = up_to_81<wait_for_81<_1, tag<Tag, 3>>>(),
-            std::size_t _3 = up_to_81<wait_for_81<_2, tag<Tag, 4>>>(),
-            std::size_t _4 = up_to_81<wait_for_81<_3, tag<Tag, 5>>>(),
-            std::size_t _5 = up_to_81<wait_for_81<_4, tag<Tag, 6>>>(),
-            std::size_t _6 = up_to_81<wait_for_81<_5, tag<Tag, 7>>>(),
-            std::size_t _7 = up_to_81<wait_for_81<_6, tag<Tag, 8>>>(),
-            std::size_t _8 = up_to_81<wait_for_81<_7, tag<Tag, 9>>>()>
-        constexpr std::size_t up_to_729() {
-            return summary<Tag, _0, _1, _2, _3, _4, _5, _6, _7, _8>::value;
+        template<typename Tag,
+                 bool Freezed,
+                 bool value = binary_descending_impl<typename std::conditional<Freezed, force_true, Tag>::type>(42)
+        >
+        constexpr bool toggleable_binary_descending() {
+            return Freezed ? true : value;
         };
 
-        template<std::size_t Index, typename Tag>
-        using wait_for_729 = typename std::conditional<(Index < 729), force_null, Tag>::type;
+        template<std::size_t Value, typename>
+        struct tagged_tag : std::integral_constant<std::size_t, Value + 1> {};
 
-        template<
-            typename Tag,
-            std::size_t _0 = up_to_729<wait_for_729<729, tag<Tag, 1>>>(),
-            std::size_t _1 = up_to_729<wait_for_729<_0,  tag<Tag, 2>>>(),
-            std::size_t _2 = up_to_729<wait_for_729<_1,  tag<Tag, 3>>>(),
-            std::size_t _3 = up_to_729<wait_for_729<_2,  tag<Tag, 4>>>(),
-            std::size_t _4 = up_to_729<wait_for_729<_3,  tag<Tag, 5>>>(),
-            std::size_t _5 = up_to_729<wait_for_729<_4,  tag<Tag, 6>>>(),
-            std::size_t _6 = up_to_729<wait_for_729<_5,  tag<Tag, 7>>>(),
-            std::size_t _7 = up_to_729<wait_for_729<_6,  tag<Tag, 8>>>(),
-            std::size_t _8 = up_to_729<wait_for_729<_7,  tag<Tag, 9>>>()>
-        constexpr std::size_t up_to_6561() {
-            return summary<Tag, _0, _1, _2, _3, _4, _5, _6, _7, _8>::value;
+        struct nothing : std::integral_constant<std::size_t, 0> {};
+
+        struct bit {
+            template<
+                typename Tag = default_tag,
+                bool Freezed = false,
+                std::size_t _0 = toggleable_binary_descending<tagged_tag<0, Tag>, Freezed>(),
+                std::size_t _1 = toggleable_binary_descending<tagged_tag<1, Tag>, !!_0>()
+            >
+            struct information : std::integral_constant<std::size_t, _0 + _1> {
+
+            };
+        };
+
+        template<typename Inner = bit>
+        struct add_bit {
+            template<
+                typename Tag = default_tag,
+                bool Freezed = false,
+                std::size_t _0 = Inner::template information<tagged_tag<0, Tag>, Freezed>::value,
+                std::size_t _1 = Inner::template information<tagged_tag<1, Tag>,  !!_0 >::value
+            >
+            struct information : std::integral_constant<std::size_t, _0 + _1> {
+
+            };
         };
     }
 
-    struct default_tag {};
-    struct default_unique_tag {};
-    struct default_largest_tag {};
+    template<typename T = detail::bit>
+    using add_bit = detail::add_bit<T>;
 
-    template<std::size_t Value = detail::up_to_729<default_tag>()>
-    constexpr std::size_t default_counter() {
-        static_assert(
-            Value != 729,
-            "This counter is limited by 729, please use larger counter, "
-            "but this will require more time to compile");
-
-        return Value;
-    }
-
-    template<std::size_t Value = detail::up_to_6561<default_largest_tag>()>
-    constexpr std::size_t largest_counter() {
-        static_assert(
-            Value != 6561,
-            "This counter is limited by 6561. "
-            "Maybe you need to use different counters "
-            "or counters with different tags?");
-
-        return Value;
-    }
-
-    template<std::size_t = detail::up_to_729<default_unique_tag>()>
-    struct unique {};
+    using counter2bit = add_bit<>;
+    using counter3bit = add_bit<counter2bit>;
+    using counter4bit = add_bit<counter3bit>;
+    using counter5bit = add_bit<counter4bit>;
+    using counter6bit = add_bit<counter5bit>;
+    using counter7bit = add_bit<counter6bit>;
+    using counter8bit = add_bit<counter7bit>;
+    /*
+        using counter9bit  = detail::add_bit<counter8bit>;
+        using counter10bit = detail::add_bit<counter9bit>;
+        using counter11bit = detail::add_bit<counter10bit>;
+        using counter12bit = detail::add_bit<counter11bit>;
+        using counter13bit = detail::add_bit<counter12bit>;
+        using counter14bit = detail::add_bit<counter13bit>;
+        using counter15bit = detail::add_bit<counter14bit>;
+        using counter16bit = detail::add_bit<counter15bit>;
+    */
 }
 
 #endif
