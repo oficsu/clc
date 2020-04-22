@@ -46,48 +46,78 @@ namespace clc
         struct default_tag {};
 
         template<typename Tag, bool value = binary_descending_impl<Tag>(42)>
-        constexpr bool binary_descending() {
-            return value;
+        using binary_descending = std::integral_constant<bool, value>;
+
+        template<bool C>
+        struct fast_conditional;
+
+        template<>
+        struct fast_conditional<true> {
+            template<typename Then, typename Else> using type = Then;
         };
+
+        template<>
+        struct fast_conditional<false> {
+            template<typename Then, typename Else> using type = Else;
+        };
+
+        template<bool C, typename Then, typename Else>
+        using fast_conditional_t = typename fast_conditional<C>:: template type<Then, Else>;
 
         struct force_true {};
 
         template<typename Tag,
-                 bool Freezed,
-                 bool value = binary_descending_impl<typename std::conditional<Freezed, force_true, Tag>::type>(42)
-        >
-        constexpr bool toggleable_binary_descending() {
-            return Freezed ? true : value;
+                 bool Freezed>
+        using toggleable_binary_descending = std::integral_constant<bool, Freezed || binary_descending_impl<fast_conditional_t<Freezed, force_true, Tag>>(42)>;
+
+        template<bool C>
+        struct partial_conditional;
+
+        template<>
+        struct partial_conditional<true> {
+            template<template<typename...> class Then, typename Else, typename ...Args> using type = Then<Args...>;
         };
+
+        template<>
+        struct partial_conditional<false> {
+            template<template<typename...> class Then, typename Else, typename ...Args> using type = Else;
+        };
+
+        template<bool C, template<typename...> class Then, typename Else, typename ...Args>
+        using partial_conditional_t = typename partial_conditional<C>:: template type<Then, Else, Args...>;
 
         template<std::size_t Value, typename>
         struct tagged_tag : std::integral_constant<std::size_t, Value + 1> {};
 
-        struct nothing : std::integral_constant<std::size_t, 0> {};
-
         struct bit {
+            enum { max = 2 };
+
             template<
                 typename Tag = default_tag,
                 bool Freezed = false,
                 std::size_t _0 = toggleable_binary_descending<tagged_tag<0, Tag>, Freezed>(),
                 std::size_t _1 = toggleable_binary_descending<tagged_tag<1, Tag>, !!_0>()
             >
-            struct information : std::integral_constant<std::size_t, _0 + _1> {
-
-            };
+            using information = std::integral_constant<std::size_t, _0 + _1>;
         };
 
         template<typename Inner = bit>
         struct add_bit {
+            enum { max = Inner::max * 2 };
+
+            template<typename Args, typename FreezedConstant>
+            using previous = typename Inner:: template information<Args, FreezedConstant::value>;
+
+            template<typename Tag, bool Freezed>
+            using part = partial_conditional_t<!Freezed, previous, std::integral_constant<std::size_t, Inner::max>, Tag, std::integral_constant<bool, Freezed>>;
+
             template<
                 typename Tag = default_tag,
                 bool Freezed = false,
-                std::size_t _0 = Inner::template information<tagged_tag<0, Tag>, Freezed>::value,
-                std::size_t _1 = Inner::template information<tagged_tag<1, Tag>,  !!_0 >::value
+                std::size_t _0 = part<tagged_tag<0, Tag>, Freezed>::value,
+                std::size_t _1 = part<tagged_tag<1, Tag>,  !! _0 >::value
             >
-            struct information : std::integral_constant<std::size_t, _0 + _1> {
-
-            };
+            using information = std::integral_constant<std::size_t, _0 + _1>;
         };
     }
 
@@ -101,16 +131,17 @@ namespace clc
     using counter6bit = add_bit<counter5bit>;
     using counter7bit = add_bit<counter6bit>;
     using counter8bit = add_bit<counter7bit>;
-    /*
-        using counter9bit  = detail::add_bit<counter8bit>;
-        using counter10bit = detail::add_bit<counter9bit>;
-        using counter11bit = detail::add_bit<counter10bit>;
-        using counter12bit = detail::add_bit<counter11bit>;
-        using counter13bit = detail::add_bit<counter12bit>;
-        using counter14bit = detail::add_bit<counter13bit>;
-        using counter15bit = detail::add_bit<counter14bit>;
-        using counter16bit = detail::add_bit<counter15bit>;
-    */
+
+
+    using counter9bit  = detail::add_bit<counter8bit>;
+    using counter10bit = detail::add_bit<counter9bit>;
+    using counter11bit = detail::add_bit<counter10bit>;
+    using counter12bit = detail::add_bit<counter11bit>;
+    using counter13bit = detail::add_bit<counter12bit>;
+    using counter14bit = detail::add_bit<counter13bit>;
+    using counter15bit = detail::add_bit<counter14bit>;
+    using counter16bit = detail::add_bit<counter15bit>;
+
 }
 
 #endif
