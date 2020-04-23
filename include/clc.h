@@ -34,41 +34,23 @@ namespace clc
         };
 
         template<typename Tag>
-        constexpr bool binary_descending_impl(float) {
+        constexpr bool toggle_impl(float) {
             return sizeof(infector<Tag, declarator<Tag>>);
         };
 
         template<typename Tag, unit = get(declarator<Tag>{})>
-        constexpr bool binary_descending_impl(int) {
+        constexpr bool toggle_impl(int) {
             return false;
         };
 
-        struct default_tag {};
+        template<std::size_t Value>
+        using index = std::integral_constant<std::size_t, Value>;
 
-        template<typename Tag, bool value = binary_descending_impl<Tag>(42)>
-        using binary_descending = std::integral_constant<bool, value>;
+        template<bool Value>
+        using boolean = std::integral_constant<bool, Value>;
 
-        template<bool C>
-        struct fast_conditional;
-
-        template<>
-        struct fast_conditional<true> {
-            template<typename Then, typename Else> using type = Then;
-        };
-
-        template<>
-        struct fast_conditional<false> {
-            template<typename Then, typename Else> using type = Else;
-        };
-
-        template<bool C, typename Then, typename Else>
-        using fast_conditional_t = typename fast_conditional<C>:: template type<Then, Else>;
-
-        struct force_true {};
-
-        template<typename Tag,
-                 bool Freezed>
-        using toggleable_binary_descending = std::integral_constant<bool, Freezed || binary_descending_impl<fast_conditional_t<Freezed, force_true, Tag>>(42)>;
+        template<typename Tag>
+        using toggle = boolean<toggle_impl<Tag>(42)>;
 
         template<bool C>
         struct partial_conditional;
@@ -87,61 +69,80 @@ namespace clc
         using partial_conditional_t = typename partial_conditional<C>:: template type<Then, Else, Args...>;
 
         template<std::size_t Value, typename>
-        struct tagged_tag : std::integral_constant<std::size_t, Value + 1> {};
+        struct recursive_tag : index<Value + 1> {};
 
         struct bit {
-            enum { max = 2 };
+            enum { max = 1 };
 
             template<
-                typename Tag = default_tag,
-                bool Freezed = false,
-                std::size_t _0 = toggleable_binary_descending<tagged_tag<0, Tag>, Freezed>(),
-                std::size_t _1 = toggleable_binary_descending<tagged_tag<1, Tag>, !!_0>()
+                typename Tag,
+                typename Freezed = boolean<false>,
+                std::size_t Value = partial_conditional_t<!Freezed::value, toggle, index<1>, recursive_tag<0, Tag>>::value
             >
-            using information = std::integral_constant<std::size_t, _0 + _1>;
+            using next = index<Value>;
         };
 
-        template<typename Inner = bit>
+        template<typename Nested = bit>
         struct add_bit {
-            enum { max = Inner::max * 2 };
+            enum { max = Nested::max * 2 };
 
-            template<typename Args, typename FreezedConstant>
-            using previous = typename Inner:: template information<Args, FreezedConstant::value>;
+            template<typename Args, typename Freezed>
+            using previous = typename Nested:: template next<Args, Freezed>;
 
-            template<typename Tag, bool Freezed>
-            using part = partial_conditional_t<!Freezed, previous, std::integral_constant<std::size_t, Inner::max>, Tag, std::integral_constant<bool, Freezed>>;
+            template<bool Freezed, typename Tag>
+            using instantiate_for_false_only = partial_conditional_t<!Freezed, previous, index<Nested::max>, Tag, boolean<Freezed>>;
 
             template<
-                typename Tag = default_tag,
-                bool Freezed = false,
-                std::size_t _0 = part<tagged_tag<0, Tag>, Freezed>::value,
-                std::size_t _1 = part<tagged_tag<1, Tag>,  !! _0 >::value
+                typename Tag,
+                typename Freezed = boolean<false>,
+                std::size_t First  = instantiate_for_false_only<Freezed::value, recursive_tag<0, Tag>>::value,
+                std::size_t Second = instantiate_for_false_only<bool ( First ), recursive_tag<1, Tag>>::value
             >
-            using information = std::integral_constant<std::size_t, _0 + _1>;
+            using next = index<First + Second>;
         };
+
+        template<std::size_t Width>
+        struct bits : add_bit<bits<Width - 1>> {};
+
+        template<>
+        struct bits<0> : bit {};
+
+        template<typename Nested>
+        struct reverse {
+            template<
+                typename Tag,
+                typename Freezed = boolean<false>,
+                std::size_t Value = Nested:: template next<Tag, Freezed>::value
+            >
+            using next = index<Nested::max - Value>;
+        };
+
+        template <std::size_t Value>
+        struct log2 : index<1 + log2<Value / 2>::value> {};
+
+        template<> struct log2<1> : index<1> {};
     }
 
-    template<typename T = detail::bit>
-    using add_bit = detail::add_bit<T>;
+    struct default_counter_tag {};
+    struct default_reverse_counter_tag {};
 
-    using counter2bit = add_bit<>;
-    using counter3bit = add_bit<counter2bit>;
-    using counter4bit = add_bit<counter3bit>;
-    using counter5bit = add_bit<counter4bit>;
-    using counter6bit = add_bit<counter5bit>;
-    using counter7bit = add_bit<counter6bit>;
-    using counter8bit = add_bit<counter7bit>;
+    template<
+        typename Tag = default_counter_tag,
+        std::size_t value = detail::reverse<detail::bits<16>>::next<Tag>()
+    >
+    constexpr std::size_t counter() { return value; }
 
-
-    using counter9bit  = detail::add_bit<counter8bit>;
-    using counter10bit = detail::add_bit<counter9bit>;
-    using counter11bit = detail::add_bit<counter10bit>;
-    using counter12bit = detail::add_bit<counter11bit>;
-    using counter13bit = detail::add_bit<counter12bit>;
-    using counter14bit = detail::add_bit<counter13bit>;
-    using counter15bit = detail::add_bit<counter14bit>;
-    using counter16bit = detail::add_bit<counter15bit>;
-
+    template<
+        std::size_t InitialValue,
+        typename Tag = default_reverse_counter_tag,
+        typename BitWidth = detail::log2<InitialValue - 1>,
+        typename Bits = typename detail::bits<BitWidth::value>,
+        typename Index = typename Bits::template next<Tag>
+    >
+    constexpr std::size_t reverse_counter() {
+        static_assert ((Index::value - (Bits::max - InitialValue)) <= InitialValue, "Overflow");
+        return Index::value - (Bits::max - InitialValue);
+    }
 }
 
 #endif
