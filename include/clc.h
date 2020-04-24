@@ -49,8 +49,8 @@ namespace clc
         template<bool Value>
         using boolean = std::integral_constant<bool, Value>;
 
-        template<typename Tag>
-        using toggle = boolean<toggle_impl<Tag>(42)>;
+        template<typename Tag, typename Value = boolean<toggle_impl<Tag>(42)>>
+        using toggle = Value;
 
         template<bool C>
         struct partial_conditional;
@@ -71,15 +71,24 @@ namespace clc
         template<std::size_t Value, typename>
         struct recursive_tag : index<Value + 1> {};
 
+        struct force_true {};
+
+        static_assert(toggle<force_true>() == 1, "");
+        static_assert(toggle<force_true>() == 0, "");
+
         struct bit {
             enum { max = 1 };
 
             template<
                 typename Tag,
                 typename Freezed = boolean<false>,
-                std::size_t Value = partial_conditional_t<!Freezed::value, toggle, index<1>, recursive_tag<0, Tag>>::value
+                #if defined(__GNUG__)
+                    std::size_t Value = toggle<typename std::conditional<Freezed::value, force_true, recursive_tag<0, Tag>>::type>::value
+                #else
+                    std::size_t Value = partial_conditional_t<!Freezed::value, toggle, index<1>, recursive_tag<0, Tag>>::value
+                #endif
             >
-            using next = index<Value>;
+            using next = index<Freezed::value ? 1 : Value>;
         };
 
         template<typename Nested = bit>
@@ -95,8 +104,13 @@ namespace clc
             template<
                 typename Tag,
                 typename Freezed = boolean<false>,
-                std::size_t First  = instantiate_for_false_only<Freezed::value, recursive_tag<0, Tag>>::value,
-                std::size_t Second = instantiate_for_false_only<bool ( First ), recursive_tag<1, Tag>>::value
+                #if defined(__GNUG__)
+                    std::size_t First  = Nested:: template next<recursive_tag<0, Tag>, Freezed>::value, // instantiate_for_false_only<Freezed::value, recursive_tag<0, Tag>>::value,
+                    std::size_t Second = Nested:: template next<recursive_tag<1, Tag>, boolean<!!First>>::value
+                #else
+                    std::size_t First  = instantiate_for_false_only<Freezed::value, recursive_tag<0, Tag>>::value,
+                    std::size_t Second = instantiate_for_false_only<bool ( First ), recursive_tag<1, Tag>>::value
+                #endif
             >
             using next = index<First + Second>;
         };
