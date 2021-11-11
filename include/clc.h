@@ -173,11 +173,13 @@ namespace clc
 
 
 
+    template<std::size_t>
     struct default_counter_tag {};
 
     template<std::size_t, std::size_t>
     struct default_range_counter_tag {};
 
+    template<std::size_t>
     struct default_reverse_counter_tag {};
 
 
@@ -189,7 +191,7 @@ namespace clc
 
 
     template<
-        typename Tag = default_counter_tag,
+        typename Tag = default_counter_tag<default_counter_width>,
         std::size_t Width = default_counter_width,
 
         typename..., // private variables:
@@ -205,7 +207,7 @@ namespace clc
 
     template<
         std::size_t InitialValue,
-        typename Tag = default_reverse_counter_tag,
+        typename Tag = default_reverse_counter_tag<InitialValue>,
 
         typename..., // private variables:
             typename Width = meta::log2<InitialValue - 1>,
