@@ -26,25 +26,27 @@ namespace clc
     {
         namespace type_loophole
         {
-            template<typename Tag>
-            struct flag {
-                friend constexpr meta::unit get(flag);
-            };
+            namespace {
+                template<typename Tag>
+                struct flag {
+                    friend constexpr meta::unit get(flag);
+                };
 
-            template<typename Tag, typename Flag>
-            struct writer {
-                friend constexpr meta::unit get(Flag) {
-                    return meta::unit::value;
-                }
-            };
+                template<typename Tag, typename Flag>
+                struct writer {
+                    friend constexpr meta::unit get(Flag) {
+                        return meta::unit::value;
+                    }
+                };
+            }
 
             template<typename Tag, bool = true>
-            constexpr bool toggle_impl(...) {
+            static constexpr bool toggle_impl(...) {
                 return sizeof(writer<Tag, flag<Tag>>);
             };
 
             template<typename Tag, bool = true, meta::unit = get(flag<Tag>{})>
-            constexpr bool toggle_impl(meta::unit) {
+            static constexpr bool toggle_impl(meta::unit) {
                 return false;
             };
         }
@@ -55,16 +57,20 @@ namespace clc
 
     namespace meta
     {
-        template<std::size_t Value>
-        using index = std::integral_constant<std::size_t, Value>;
+        namespace {
+            // base case of recursion
+            struct bit {
+                enum { max = 1 };
 
-        // base case of recursion
-        struct bit {
-            enum { max = 1 };
-
-            template<typename Tag, bool Value = detail::toggle<Tag>()>
-            using next = index<Value>;
-        };
+                template<
+                    typename Tag,
+                    typename..., // private variable:
+                        bool Value = clc::detail::toggle<Tag>()>
+                static constexpr std::size_t next() {
+                    return Value;
+                }
+            };
+        }
 
 
 
@@ -77,7 +83,7 @@ namespace clc
             typename Tag,
             typename..., // private variables:
                 typename ConditionalTag = conditionally_hide_tag<Cond, Tag>,
-                std::size_t R = Bits:: template next<ConditionalTag>::value>
+                std::size_t R = Bits:: template next<ConditionalTag>()>
         static constexpr std::size_t conditional_next_for(meta::unit) {
             return R;
         }
@@ -91,7 +97,7 @@ namespace clc
             typename Bits,
             typename Tag,
             typename..., // private variable:
-                std::size_t R = Bits:: template next<Tag>::value
+                std::size_t R = Bits:: template next<Tag>()
         >
         static constexpr std::size_t unconditional_next_for() {
             return R;
@@ -104,20 +110,23 @@ namespace clc
         struct right_recursive_tag {};
 
 
+        namespace {
+            // recursive case
+            template<typename Nested = bit>
+            struct add_bit {
+                enum : std::size_t { max = Nested::max * 2 };
 
-        // recursive case
-        template<typename Nested = bit>
-        struct add_bit {
-            enum : std::size_t { max = Nested::max * 2 };
-
-            template<
-                typename Tag,
-                // private variables:
-                std::size_t First  = unconditional_next_for<Nested, left_recursive_tag<Tag>>(),
-                std::size_t Second = conditional_next_for<!First, Nested, right_recursive_tag<Tag>>(meta::unit::value)
-            >
-            using next = index<First + Second>;
-        };
+                template<
+                    typename Tag,
+                    typename..., // private variables:
+                        std::size_t Left  = unconditional_next_for<Nested, left_recursive_tag<Tag>>(),
+                        std::size_t Right = conditional_next_for<!Left, Nested, right_recursive_tag<Tag>>(meta::unit::value)
+                >
+                static constexpr std::size_t next() {
+                    return Left + Right;
+                }
+            };
+        }
 
 
 
@@ -138,11 +147,13 @@ namespace clc
         using bits = typename detail::bits<Width>::type;
 
 
+        template<std::size_t Value>
+        using size_t_constant = std::integral_constant<std::size_t, Value>;
 
         template <std::size_t Value>
-        struct log2 : index<1 + log2<Value / 2>::value> {};
+        struct log2 : size_t_constant<1 + log2<Value / 2>::value> {};
 
-        template<> struct log2<1> : index<1> {};
+        template<> struct log2<1> : size_t_constant<1> {};
 
 
 
@@ -180,9 +191,9 @@ namespace clc
 
         typename..., // private variables:
             typename Bits = meta::bits<Width>,
-            std::size_t Index = Bits::template next<Tag>::value
+            std::size_t Index = Bits::template next<Tag>()
     >
-    constexpr std::size_t counter() {
+    static constexpr std::size_t counter() {
         static_assert (Bits::max >= Index, "counter overflow");
         return Bits::max - Index;
     }
@@ -197,7 +208,7 @@ namespace clc
             typename Width = meta::log2<InitialValue - 1>,
             std::size_t Index = counter<Tag, Width::value>()
     >
-    constexpr std::size_t reverse_counter() {
+    static constexpr std::size_t reverse_counter() {
         static_assert (Index >= 0, "counter underflow");
         return InitialValue - Index;
     }
@@ -216,7 +227,7 @@ namespace clc
             std::size_t Min = meta::min(Begin, End),
             std::size_t Max = meta::max(Begin, End)
     >
-    constexpr std::size_t range_counter() {
+    static constexpr std::size_t range_counter() {
             // we can use single "counter out of range" statement,
             // but this message less useful for the user
             static_assert (Max - Index <= Max || ! IsDirect, "counter overflow");
