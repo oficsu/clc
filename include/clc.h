@@ -157,18 +157,19 @@ namespace clc
         struct log2 : size_t_constant<1 + log2<Value / 2>::value> {};
 
         template<> struct log2<1> : size_t_constant<1> {};
+    }
 
 
 
-        static constexpr std::size_t max(std::size_t lhs, std::size_t rhs) {
-            return lhs > rhs ? lhs : rhs;
-        }
-        static constexpr std::size_t min(std::size_t lhs, std::size_t rhs) {
-            return lhs < rhs ? lhs : rhs;
-        }
-        static constexpr std::size_t diff(std::size_t lhs, std::size_t rhs) {
-            return (lhs > rhs ? lhs - rhs : rhs - lhs);
-        }
+    template<
+        typename Tag,
+        std::size_t Width,
+        typename..., // private variables:
+            typename Bits = meta::bits<Width>,
+            std::size_t Value = Bits::template next<Tag>()
+    >
+    static constexpr std::size_t unsafe_counter() {
+        return Value;
     }
 
 
@@ -184,22 +185,21 @@ namespace clc
 
 
 
-    // instantiated fast enough on Clang (on my laptop it stucks at ~ 44)
-    // and on GCC (on my laptop it stucks at ~ 75, much more than necessary)
-    enum { default_counter_width = 32 };
+    enum { default_counter_size = 4096 };
 
 
 
     template<
-        typename Tag = default_counter_tag<default_counter_width>,
-        std::size_t Width = default_counter_width,
+        std::size_t MaxValue = default_counter_size,
+        typename Tag = default_counter_tag<MaxValue>,
 
         typename..., // private variables:
+            std::size_t Width = meta::log2<MaxValue>::value,
             typename Bits = meta::bits<Width>,
             std::size_t Index = Bits::template next<Tag>()
     >
     static constexpr std::size_t counter() {
-        static_assert (Bits::max >= Index, "counter overflow");
+        static_assert(Bits::max - Index <= MaxValue, "counter overflow detected");
         return Bits::max - Index;
     }
 
@@ -210,12 +210,14 @@ namespace clc
         typename Tag = default_reverse_counter_tag<InitialValue>,
 
         typename..., // private variables:
-            typename Width = meta::log2<InitialValue - 1>,
-            std::size_t Index = counter<Tag, Width::value>()
+            std::size_t Width = meta::log2<InitialValue>::value,
+            typename Bits = meta::bits<Width>,
+            std::size_t Diff = Bits::max - InitialValue,
+            std::size_t Index = Bits::template next<Tag>()
     >
     static constexpr std::size_t reverse_counter() {
-        static_assert (Index >= 0, "counter underflow");
-        return InitialValue - Index;
+        static_assert(Index >= Diff, "counter underflow detected");
+        return Index - Diff;
     }
 
 
@@ -224,21 +226,27 @@ namespace clc
         std::size_t Begin,
         std::size_t End,
         typename Tag = default_range_counter_tag<Begin, End>,
-
         typename..., // private variables:
-            bool IsDirect = (Begin < End),
-            std::size_t RangeSize = meta::diff(Begin, End),
-            std::size_t Index = reverse_counter<RangeSize, Tag>(),
-            std::size_t Min = meta::min(Begin, End),
-            std::size_t Max = meta::max(Begin, End)
+            typename ConditionalTag = meta::enable_tag_if<(Begin < End), Tag>,
+            std::size_t Diff  = End - Begin,
+            std::size_t Index = counter<Diff, ConditionalTag>(),
+            typename = void
     >
     static constexpr std::size_t range_counter() {
-            // we can use single "counter out of range" statement,
-            // but this message less useful for the user
-            static_assert (Max - Index <= Max || ! IsDirect, "counter overflow");
-            static_assert (Max - Index <= Max ||   IsDirect, "counter underflow");
-            return IsDirect ? Max - Index
-                            : Min + Index;
+        return Begin + Index;
+    }
+
+    template<
+        std::size_t Begin,
+        std::size_t End,
+        typename Tag = default_range_counter_tag<Begin, End>,
+        typename..., // private variables:
+            typename ConditionalTag = meta::enable_tag_if<(Begin >= End), Tag>,
+            std::size_t Diff  = Begin - End,
+            std::size_t Index = reverse_counter<Diff, ConditionalTag>()
+    >
+    static constexpr std::size_t range_counter() {
+        return End + Index;
     }
 }
 
