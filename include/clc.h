@@ -78,14 +78,14 @@ namespace clc
 
 
         template<bool Cond, typename Tag>
-        using conditionally_hide_tag = typename std::enable_if<Cond, Tag>::type;
+        using enable_tag_if = typename std::enable_if<Cond, Tag>::type;
 
         template<
             bool Cond,
             typename Bits,
             typename Tag,
             typename..., // private variables:
-                typename ConditionalTag = conditionally_hide_tag<Cond, Tag>,
+                typename ConditionalTag = enable_tag_if<Cond, Tag>,
                 std::size_t R = Bits:: template next<ConditionalTag>()>
         static constexpr std::size_t conditional_next_for(meta::unit) {
             return R;
