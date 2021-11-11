@@ -15,6 +15,9 @@
 
 #include <utility>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnon-template-friend"
+
 namespace clc
 {
     namespace meta
@@ -236,5 +239,7 @@ namespace clc
                             : Min + Index;
     }
 }
+
+#pragma GCC diagnostic pop
 
 #endif
