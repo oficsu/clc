@@ -1,6 +1,10 @@
-cmake_minimum_required(VERSION 3.6)
 
-project(clc VERSION 0.0.1 LANGUAGES CXX)
+#             Copyright Ofee Oficsu 2020 - 2021.
+# Distributed under the Boost Software License, Version 1.0.
+#     (See accompanying file LICENSE_1_0.txt or copy at
+#           https://www.boost.org/LICENSE_1_0.txt)
+
+cmake_minimum_required(VERSION 3.5)
 
 add_library(${PROJECT_NAME} INTERFACE)
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})

@@ -1,14 +1,12 @@
-//  Curious Loopholed Counter
+//                 Curious Loopholed Counter
 //
-//  Copyright Ofee Oficsu 2020
-//  Copyright Malibushko  2020
+//             Copyright Ofee Oficsu 2020 - 2021.
+//                 Copyright Malibushko  2020
+// Distributed under the Boost Software License, Version 1.0.
+//     (See accompanying file LICENSE_1_0.txt or copy at
+//           https://www.boost.org/LICENSE_1_0.txt)
 //
-//  Use, modification and distribution is subject to the
-//  Boost Software License, Version 1.0. (See accompanying
-//  file LICENSE_1_0.txt or copy at
-//  http://www.boost.org/LICENSE_1_0.txt)
-//
-//  Project home: https://github.com/oficsu/clc
+//        Project home: https://github.com/oficsu/clc
 
 #ifndef CURIOUS_LOOPHOLED_COUNTER_HPP
 #define CURIOUS_LOOPHOLED_COUNTER_HPP
