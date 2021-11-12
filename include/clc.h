@@ -41,18 +41,43 @@ namespace clc
                 };
             }
 
-            template<typename Tag, bool = true>
-            static constexpr bool toggle_impl(...) {
-                return sizeof(writer<Tag, flag<Tag>>);
+            template<typename Tag>
+            static constexpr bool read(...) {
+                return false;
             };
 
-            template<typename Tag, bool = true, meta::unit = get(flag<Tag>{})>
+            template<typename Tag, typename..., meta::unit = get(flag<Tag>{})>
+            static constexpr bool read(meta::unit) {
+                return true;
+            };
+
+            template<typename Tag, typename..., bool = sizeof(writer<Tag, flag<Tag>>)>
+            static constexpr meta::unit set(...) {
+                return meta::unit::value;
+            };
+
+            template<typename Tag>
+            static constexpr bool toggle_impl(...) {
+                return set<Tag>(), true;
+            };
+
+            template<typename Tag, typename..., meta::unit = get(flag<Tag>{})>
             static constexpr bool toggle_impl(meta::unit) {
                 return false;
             };
         }
 
-        template<typename Tag, bool Value = type_loophole::toggle_impl<Tag>(meta::unit::value)>
+        template<typename Tag, typename..., bool Value = type_loophole::read<Tag>(meta::unit::value)>
+        static constexpr bool read() {
+            return Value;
+        };
+
+        template<typename Tag, typename..., meta::unit = type_loophole::set<Tag>(meta::unit::value)>
+        static constexpr meta::unit set() {
+            return meta::unit::value;
+        };
+
+        template<typename Tag, typename..., bool Value = type_loophole::toggle_impl<Tag>(meta::unit::value)>
         static constexpr bool toggle() { return Value; }
     }
 
