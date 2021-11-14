@@ -1,7 +1,8 @@
 //                 Curious Loopholed Counter
 //
 //             Copyright Ofee Oficsu 2020 - 2021.
-//                 Copyright Malibushko  2020
+//            Copyright webreh (t.me/webreh) 2021.
+//                 Copyright Malibushko 2020.
 // Distributed under the Boost Software License, Version 1.0.
 //     (See accompanying file LICENSE_1_0.txt or copy at
 //           https://www.boost.org/LICENSE_1_0.txt)
@@ -41,7 +42,8 @@ namespace clc
     {
         namespace type_loophole
         {
-            namespace {
+            namespace
+            {
                 template<typename Tag>
                 struct flag {
                     friend constexpr meta::unit get(flag);
@@ -76,13 +78,13 @@ namespace clc
             };
         }
 
-        template<typename Tag, typename..., bool Value = type_loophole::read<Tag>(meta::unit::value)>
+        template<typename Tag, typename..., bool Result = type_loophole::read<Tag>(meta::unit::value)>
         static constexpr bool read() {
-            return Value;
+            return Result;
         };
 
-        template<typename Tag, typename..., bool Value = type_loophole::toggle_impl<Tag>(meta::unit::value)>
-        static constexpr bool toggle() { return Value; }
+        template<typename Tag, typename..., bool Result = type_loophole::toggle_impl<Tag>(meta::unit::value)>
+        static constexpr bool toggle() { return Result; }
 
         // why toggle rather than something
         // like a non-overloaded type_loophole::set?
@@ -96,116 +98,101 @@ namespace clc
 
     namespace meta
     {
-        namespace {
-            // base case of recursion
-            struct bit {
-                enum { max = 1 };
+        template<typename Tag, std::size_t N>
+        struct index;
 
+        namespace
+        {
+            template<std::size_t Size>
+            struct binary_searcher;
+
+            // base case
+            template<>
+            struct binary_searcher<1> {
                 template<
+                    std::size_t Pivot,
                     typename Tag,
-                    typename..., // private variable:
-                        bool Value = clc::detail::toggle<Tag>()>
+                    typename..., // private variables:
+                        bool IsIndexReached = detail::read<index<Tag, Pivot>>()
+                >
                 static constexpr std::size_t next() {
-                    return Value;
+                    return Pivot + IsIndexReached;
                 }
             };
+
+
+            // recursive case
+            template<std::size_t Size>
+            struct binary_searcher {
+                template<
+                    std::size_t Pivot,
+                    typename Tag,
+                    typename..., // private variables:
+                        std::size_t NextSize = Size / 2,
+                        std::size_t Shift = (1 + NextSize) / 2,
+                        bool IsIndexReached = detail::read<index<Tag, Pivot>>(),
+                        std::size_t NextPivot = IsIndexReached ? Pivot + Shift : Pivot - Shift,
+                        std::size_t Result = binary_searcher<NextSize>::template next<NextPivot, Tag>()
+                >
+                static constexpr std::size_t next() {
+                    return Result;
+                }
+            };
+
+
+            // prevent falling into recursion in a
+            // template instantiation when invalid
+            // user input is given
+            template<>
+            struct binary_searcher<0> {
+                template<std::size_t Pivot, typename Tag>
+                static constexpr std::size_t next() {
+                    return 0;
+                }
+            };
+        }
+
+        template<
+            typename Tag,
+            std::size_t Size,
+            typename..., // private variable:
+                std::size_t Result = binary_searcher<Size>::template next<Size / 2, Tag>()
+        >
+        static constexpr std::size_t search_first_unset_value() {
+            return Result;
+        }
+
+
+
+        static constexpr bool is_power_of_two(std::size_t x) {
+            return (x & (x - 1)) == 0;
+        }
+
+        static constexpr std::size_t round_up_to_power_of_2(std::size_t x, std::size_t power = 1) {
+            return power >= x ? power : round_up_to_power_of_2(x, power * 2);
         }
 
 
 
         template<bool Cond, typename Tag>
         using enable_tag_if = typename std::enable_if<Cond, Tag>::type;
-
-        template<
-            bool Cond,
-            typename Bits,
-            typename Tag,
-            typename..., // private variables:
-                typename ConditionalTag = enable_tag_if<Cond, Tag>,
-                std::size_t R = Bits:: template next<ConditionalTag>()>
-        static constexpr std::size_t conditional_next_for(meta::unit) {
-            return R;
-        }
-
-        template<bool Cond, typename Bits, typename Tag>
-        static constexpr std::size_t conditional_next_for(...) {
-            return Bits::max;
-        }
-
-        template<
-            typename Bits,
-            typename Tag,
-            typename..., // private variable:
-                std::size_t R = Bits:: template next<Tag>()
-        >
-        static constexpr std::size_t unconditional_next_for() {
-            return R;
-        }
-
-        template<typename>
-        struct left_recursive_tag {};
-
-        template<typename>
-        struct right_recursive_tag {};
-
-
-        namespace {
-            // recursive case
-            template<typename Nested = bit>
-            struct add_bit {
-                enum : std::size_t { max = Nested::max * 2 };
-
-                template<
-                    typename Tag,
-                    typename..., // private variables:
-                        std::size_t Left  = unconditional_next_for<Nested, left_recursive_tag<Tag>>(),
-                        std::size_t Right = conditional_next_for<!Left, Nested, right_recursive_tag<Tag>>(meta::unit::value)
-                >
-                static constexpr std::size_t next() {
-                    return Left + Right;
-                }
-            };
-        }
-
-
-
-        namespace detail
-        {
-            template<std::size_t Width>
-            struct bits {
-                using type = add_bit<typename bits<Width - 1>::type>;
-            };
-
-            template<>
-            struct bits<1> {
-                using type = add_bit<>;
-            };
-        }
-
-        template<std::size_t Width>
-        using bits = typename detail::bits<Width>::type;
-
-
-        template<std::size_t Value>
-        using size_t_constant = std::integral_constant<std::size_t, Value>;
-
-        template <std::size_t Value>
-        struct log2 : size_t_constant<1 + log2<Value / 2>::value> {};
-
-        template<> struct log2<1> : size_t_constant<1> {};
     }
 
 
 
     template<
         typename Tag,
-        std::size_t Width,
+        std::size_t Size,
         typename..., // private variables:
-            typename Bits = meta::bits<Width>,
-            std::size_t Value = Bits::template next<Tag>()
+            std::size_t Index = meta::search_first_unset_value<Tag, Size>(),
+            meta::unit = detail::set<meta::index<Tag, Index>>()
     >
     static constexpr std::size_t unsafe_counter() {
-        return Value;
+        static_assert(
+            meta::is_power_of_two(Size),
+            "the size must be exactly a power of two");
+
+        return Index;
     }
 
 
@@ -226,34 +213,30 @@ namespace clc
 
 
     template<
-        std::size_t MaxValue = default_counter_size,
-        typename Tag = default_counter_tag<MaxValue>,
-
+        std::size_t UpTo = default_counter_size,
+        typename Tag = default_counter_tag<UpTo>,
         typename..., // private variables:
-            std::size_t Width = meta::log2<MaxValue>::value,
-            typename Bits = meta::bits<Width>,
-            std::size_t Index = Bits::template next<Tag>()
+            std::size_t Size = meta::round_up_to_power_of_2(UpTo),
+            std::size_t Result = unsafe_counter<Tag, Size>()
     >
     static constexpr std::size_t counter() {
-        static_assert(Bits::max - Index <= MaxValue, "counter overflow detected");
-        return Bits::max - Index;
+        static_assert(Result <= UpTo, "counter overflow detected");
+        return Result;
     }
 
 
 
     template<
-        std::size_t InitialValue,
-        typename Tag = default_reverse_counter_tag<InitialValue>,
-
+        std::size_t DownTo,
+        typename Tag = default_reverse_counter_tag<DownTo>,
         typename..., // private variables:
-            std::size_t Width = meta::log2<InitialValue>::value,
-            typename Bits = meta::bits<Width>,
-            std::size_t Diff = Bits::max - InitialValue,
-            std::size_t Index = Bits::template next<Tag>()
+            std::size_t Size = meta::round_up_to_power_of_2(DownTo),
+            std::size_t Index = unsafe_counter<Tag, Size>(),
+            std::size_t Result = DownTo - Index
     >
     static constexpr std::size_t reverse_counter() {
-        static_assert(Index >= Diff, "counter underflow detected");
-        return Index - Diff;
+        static_assert(Result <= DownTo, "counter underflow detected");
+        return Result;
     }
 
 
@@ -264,9 +247,9 @@ namespace clc
         typename Tag = default_range_counter_tag<Begin, End>,
         typename..., // private variables:
             typename ConditionalTag = meta::enable_tag_if<(Begin < End), Tag>,
-            std::size_t Diff  = End - Begin,
-            std::size_t Index = counter<Diff, ConditionalTag>(),
-            typename = void
+            std::size_t Size = End - Begin,
+            std::size_t Index = counter<Size, ConditionalTag>(),
+            typename /* fixes overload resolution */ = void
     >
     static constexpr std::size_t range_counter() {
         return Begin + Index;
@@ -278,8 +261,8 @@ namespace clc
         typename Tag = default_range_counter_tag<Begin, End>,
         typename..., // private variables:
             typename ConditionalTag = meta::enable_tag_if<(Begin >= End), Tag>,
-            std::size_t Diff  = Begin - End,
-            std::size_t Index = reverse_counter<Diff, ConditionalTag>()
+            std::size_t Size = Begin - End,
+            std::size_t Index = reverse_counter<Size, ConditionalTag>()
     >
     static constexpr std::size_t range_counter() {
         return End + Index;
