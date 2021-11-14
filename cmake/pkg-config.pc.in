@@ -1,0 +1,4 @@
+Name: ${CLC_PROJECT_NAME}
+Description: Curious Loopholed Counter
+Version: ${PROJECT_VERSION}
+Cflags: -I${CMAKE_INSTALL_FULL_INCLUDEDIR}
