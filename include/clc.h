@@ -13,8 +13,22 @@
 
 #include <utility>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wnon-template-friend"
+#ifdef __GNUC__
+    #pragma GCC diagnostic push
+
+    #ifdef __clang__
+        #pragma clang diagnostic ignored "-Wundefined-internal"
+    #endif
+
+    #if not defined(__clang__)
+        #pragma GCC diagnostic ignored "-Wnon-template-friend"
+    #endif
+#endif
+
+#ifdef __INTEL_COMPILER
+    #pragma warning ( push )
+    #pragma warning ( disable:1624 )
+#endif
 
 namespace clc
 {
@@ -273,6 +287,12 @@ namespace clc
     }
 }
 
-#pragma GCC diagnostic pop
+#ifdef __GNUC__
+    #pragma GCC diagnostic pop
+#endif
+
+#ifdef __INTEL_COMPILER
+    #pragma warning ( disable:1624 )
+#endif
 
 #endif
