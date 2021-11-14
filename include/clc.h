@@ -129,8 +129,8 @@ namespace clc
                     typename Tag,
                     typename..., // private variables:
                         std::size_t NextSize = Size / 2,
-                        std::size_t Shift = (1 + NextSize) / 2,
                         bool IsIndexReached = detail::read<index<Tag, Pivot>>(),
+                        std::size_t Shift = ((IsIndexReached == 0) + NextSize) / 2,
                         std::size_t NextPivot = IsIndexReached ? Pivot + Shift : Pivot - Shift,
                         std::size_t Result = binary_searcher<NextSize>::template next<NextPivot, Tag>()
                 >
@@ -180,17 +180,23 @@ namespace clc
 
 
 
+    template<std::size_t>
+    struct default_counter_tag {};
+
+    enum { default_counter_size = 4096 };
+
     template<
-        typename Tag,
-        std::size_t Size,
+        std::size_t UpTo = default_counter_size,
+        typename Tag = default_counter_tag<UpTo>,
         typename..., // private variables:
+            std::size_t Size = meta::round_up_to_power_of_2(UpTo),
             std::size_t Index = meta::search_first_unset_value<Tag, Size>(),
-            meta::unit = detail::set<meta::index<Tag, Index>>()
+            bool IsIndexReachedEarlier = detail::toggle<meta::index<Tag, Index>>()
     >
-    static constexpr std::size_t unsafe_counter() {
+    static constexpr std::size_t counter() {
         static_assert(
-            meta::is_power_of_two(Size),
-            "the size must be exactly a power of two");
+            Index <= UpTo && !IsIndexReachedEarlier,
+            "counter overflow detected");
 
         return Index;
     }
@@ -198,48 +204,29 @@ namespace clc
 
 
     template<std::size_t>
-    struct default_counter_tag {};
-
-    template<std::size_t, std::size_t>
-    struct default_range_counter_tag {};
-
-    template<std::size_t>
     struct default_reverse_counter_tag {};
-
-
-
-    enum { default_counter_size = 4096 };
-
-
-
-    template<
-        std::size_t UpTo = default_counter_size,
-        typename Tag = default_counter_tag<UpTo>,
-        typename..., // private variables:
-            std::size_t Size = meta::round_up_to_power_of_2(UpTo),
-            std::size_t Result = unsafe_counter<Tag, Size>()
-    >
-    static constexpr std::size_t counter() {
-        static_assert(Result <= UpTo, "counter overflow detected");
-        return Result;
-    }
-
-
 
     template<
         std::size_t DownTo,
         typename Tag = default_reverse_counter_tag<DownTo>,
         typename..., // private variables:
             std::size_t Size = meta::round_up_to_power_of_2(DownTo),
-            std::size_t Index = unsafe_counter<Tag, Size>(),
+            std::size_t Index = meta::search_first_unset_value<Tag, Size>(),
+            bool IsIndexReachedEarlier = detail::toggle<meta::index<Tag, Index>>(),
             std::size_t Result = DownTo - Index
     >
     static constexpr std::size_t reverse_counter() {
-        static_assert(Result <= DownTo, "counter underflow detected");
+        static_assert(
+            Result <= DownTo && !IsIndexReachedEarlier,
+            "counter underflow detected");
+
         return Result;
     }
 
 
+
+    template<std::size_t, std::size_t>
+    struct default_range_counter_tag {};
 
     template<
         std::size_t Begin,
