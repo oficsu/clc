@@ -7,7 +7,7 @@
 //
 //        Project home: https://github.com/oficsu/clc
 
-#include <clc.h>
+#include <clc.hpp>
 
 
 // exactly a power of 2 - 1

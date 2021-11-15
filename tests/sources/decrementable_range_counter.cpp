@@ -7,7 +7,7 @@
 //
 //        Project home: https://github.com/oficsu/clc
 
-#include <clc.h>
+#include <clc.hpp>
 
 
 namespace { struct counter_tag_27_1; }

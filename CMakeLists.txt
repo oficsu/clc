@@ -29,7 +29,7 @@ set(CLC_CMAKE_PROJECT_TARGETS_FILE     "${CLC_CMAKE_CONFIG_DIR}/${CLC_PROJECT_NA
 set(CLC_PKGCONFIG_INSTALL_DIR          "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
 set(CLC_CMAKE_CONFIG_TEMPLATE          "cmake/config.cmake.in")
 
-set(HEADER include/clc.h)
+set(HEADER include/clc.hpp)
 set(DOCS   README.md LICENSE.txt)
 set(PACKAGING
     cmake/config.cmake.in
