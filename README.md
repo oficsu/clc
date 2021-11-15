@@ -11,10 +11,12 @@ There are no dependencies from now
 Supported Compilers
 -------------------
 
-he code is known to work on the following compilers:
+The code is known to work on the following compilers:
 
-- clang 3.9 (or later)
-- GCC 7.1 (or later)
+- Clang 3.4.1 (or later)
+- GCC 4.7.1 (or later)
+- MSVC v19.14 (or later, or maybe earlier)
+- ICC 18.0 (or later)
 
 **Development Status:** This code is not stable or well-tested. No promise is made about support or long-term stability. This code *will* evolve without regard to backwards compatibility.
 
