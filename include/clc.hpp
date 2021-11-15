@@ -29,6 +29,7 @@
 #ifdef __INTEL_COMPILER
     #pragma warning ( push )
     #pragma warning ( disable:1624 )
+    #pragma warning ( disable:114 )
 #endif
 
 namespace clc
