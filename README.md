@@ -8,6 +8,20 @@ Dependencies
 
 There are no dependencies from now
 
+Example
+-------
+
+What does this library allow?
+```cpp
+assert(clc::counter() != clc::counter());
+```
+Nothing special, right? But... How about the next one?
+```cpp
+static_assert(clc::counter() != clc::counter(), "The results are different");
+static_assert(clc::counter() == 2, "The result is now 2, and then...");
+static_assert(clc::counter() == 3, "3! It's magic");
+```
+
 Supported Compilers
 -------------------
 
