@@ -244,7 +244,7 @@ namespace clc
     template<std::size_t>
     struct default_counter_tag {};
 
-    enum { default_counter_size = 4096 };
+    enum { default_counter_size = static_cast<std::size_t>(-1) };
 
     template<
         std::size_t UpTo = default_counter_size,
