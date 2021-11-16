@@ -131,7 +131,7 @@ namespace clc
                     typename..., // private variables:
                         std::size_t NextSize = Size / 2,
                         bool IsIndexReached = detail::read<index<Tag, Pivot>>(),
-                        std::size_t Shift = ((IsIndexReached == 0) + NextSize) / 2,
+                        std::size_t Shift = NextSize / 2 + 1,
                         std::size_t NextPivot = IsIndexReached ? Pivot + Shift : Pivot - Shift,
                         std::size_t Result = binary_searcher<NextSize>::template next<NextPivot, Tag>()
                 >
@@ -153,30 +153,44 @@ namespace clc
             };
         }
 
-        template<
-            typename Tag,
-            std::size_t Size,
-            typename..., // private variable:
-                std::size_t Result = binary_searcher<Size>::template next<Size / 2, Tag>()
-        >
-        static constexpr std::size_t search_first_unset_value() {
-            return Result;
+
+
+        // rounds up to 1, 3, 7, 15, 31, 63, 127 and so on...
+        static constexpr std::size_t round_up_to_mersenne_number(
+                std::size_t x,
+                std::size_t power = static_cast<std::size_t>(-1))
+        {
+            return x <= (power / 2)
+                        ? round_up_to_mersenne_number(x, power / 2)
+                        : power;
         }
 
 
-
-        static constexpr bool is_power_of_two(std::size_t x) {
-            return (x & (x - 1)) == 0;
-        }
-
-        static constexpr std::size_t round_up_to_power_of_2(std::size_t x, std::size_t power = 1) {
-            return power >= x ? power : round_up_to_power_of_2(x, power * 2);
+        // is 1, 3, 7, 15, 31, 63, 127... ?
+        static constexpr bool is_mersenne_number(std::size_t x) {
+            return (x & (x + 1)) == 0;
         }
 
 
 
         template<bool Cond, typename Tag>
         using enable_tag_if = typename std::enable_if<Cond, Tag>::type;
+    }
+
+
+
+    template<
+        typename Tag,
+        std::size_t Size = static_cast<std::size_t>(-1),
+        typename..., // private variable:
+            std::size_t Result = meta::binary_searcher<Size>::template next<Size / 2, Tag>()
+    >
+    static constexpr std::size_t search() {
+        static_assert (
+            meta::is_mersenne_number(Size),
+            "Size should be equal to (power of 2) - 1");
+
+        return Result;
     }
 
 
@@ -190,8 +204,8 @@ namespace clc
         std::size_t UpTo = default_counter_size,
         typename Tag = default_counter_tag<UpTo>,
         typename..., // private variables:
-            std::size_t Size = meta::round_up_to_power_of_2(UpTo),
-            std::size_t Index = meta::search_first_unset_value<Tag, Size>(),
+            std::size_t Size = meta::round_up_to_mersenne_number(UpTo),
+            std::size_t Index = search<Tag, Size>(),
             bool IsIndexReachedEarlier = detail::toggle<meta::index<Tag, Index>>()
     >
     static constexpr std::size_t counter() {
@@ -211,8 +225,8 @@ namespace clc
         std::size_t DownTo,
         typename Tag = default_reverse_counter_tag<DownTo>,
         typename..., // private variables:
-            std::size_t Size = meta::round_up_to_power_of_2(DownTo),
-            std::size_t Index = meta::search_first_unset_value<Tag, Size>(),
+            std::size_t Size = meta::round_up_to_mersenne_number(DownTo),
+            std::size_t Index = search<Tag, Size>(),
             bool IsIndexReachedEarlier = detail::toggle<meta::index<Tag, Index>>(),
             std::size_t Result = DownTo - Index
     >
