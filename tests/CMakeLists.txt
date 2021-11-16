@@ -11,7 +11,8 @@ set(TESTS "main"
           "counter"
           "decrementable_range_counter"
           "incrementable_range_counter"
-          "reverse_counter")
+          "reverse_counter"
+          "assign")
 
 
 foreach(TEST_SOURCE ${TESTS})

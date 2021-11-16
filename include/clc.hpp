@@ -151,6 +151,28 @@ namespace clc
                     return 0;
                 }
             };
+
+
+
+            template<std::size_t Value>
+            struct binary_assigner {
+                template<
+                    typename Tag,
+                    typename...,
+                        unit = detail::set<index<Tag, Value - 1>>(),
+                        unit = binary_assigner<Value & (Value - 1)>::template next<Tag>()>
+                static constexpr unit next() {
+                    return unit::value;
+                }
+            };
+
+            template<>
+            struct binary_assigner<0> {
+                template<typename Tag>
+                static constexpr unit next() {
+                    return unit::value;
+                }
+            };
         }
 
 
@@ -191,6 +213,17 @@ namespace clc
             "Size should be equal to (power of 2) - 1");
 
         return Result;
+    }
+
+
+
+    template<
+        typename Tag,
+        std::size_t Value,
+        typename...,
+            meta::unit = meta::binary_assigner<Value>::template next<Tag>()>
+    static constexpr meta::unit assign() {
+        return meta::unit::value;
     }
 
 
