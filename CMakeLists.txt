@@ -12,6 +12,7 @@ cmake_minimum_required(VERSION 3.5)
 project(clc VERSION 0.0.1 LANGUAGES CXX)
 
 option(CLC_BUILD_TESTING  "Build the unit tests when BUILD_TESTING is enabled" ON)
+option(CLC_BUILD_EXAMPLES "Build examples"                                     ON)
 option(CLC_INSTALL        "Install CMake targets during install step"          ON)
 
 include(GNUInstallDirs)
@@ -93,3 +94,6 @@ if(CLC_INSTALL)
             DESTINATION ${CLC_PKGCONFIG_INSTALL_DIR})
 endif()
 
+if(CLC_BUILD_EXAMPLES)
+    add_subdirectory("examples")
+endif()
