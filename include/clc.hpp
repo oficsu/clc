@@ -32,6 +32,31 @@
     #pragma warning ( disable:114 )
 #endif
 
+// definitely not the best solution
+#if (defined(_MSVC_LANG) && _MSVC_LANG >= 202002L) || __cplusplus >= 202002L
+    #ifdef __clang__
+        #if __clang_major__ >= 13
+            #define CLC_HAS_LAMBDAS_IN_UNEVALUATED_CONTEXTS
+        #endif
+    #elif  defined(__GNUC__)
+        #if __GNUC__ >= 10
+            #define CLC_HAS_LAMBDAS_IN_UNEVALUATED_CONTEXTS
+        #endif
+    #elif defined(_MSC_VER)
+        #if _MSC_VER >= 1928
+            #define CLC_HAS_LAMBDAS_IN_UNEVALUATED_CONTEXTS
+        #endif
+    #elif defined(__INTEL_COMPILER)
+        #if __INTEL_COMPILER >= 2021
+            #define CLC_HAS_LAMBDAS_IN_UNEVALUATED_CONTEXTS
+        #endif
+    #elif defined(__EDG_VERSION__)
+        #if __EDG_VERSION__ >= 501
+            #define CLC_HAS_LAMBDAS_IN_UNEVALUATED_CONTEXTS
+        #endif
+    #endif
+#endif
+
 namespace clc
 {
     namespace meta
@@ -319,6 +344,70 @@ namespace clc
             std::size_t Index = reverse_counter<Size, ConditionalTag>()>
     static constexpr std::size_t range_counter() {
         return End + Index;
+    }
+
+
+
+    namespace detail
+    {
+    #ifdef CLC_HAS_LAMBDAS_IN_UNEVALUATED_CONTEXTS
+        template<typename T = decltype([]{})>
+        using unique_type = T;
+    #else
+        namespace
+        {
+            struct unique_type_tag;
+
+            template<typename Tag = unique_type_tag, typename T = meta::index<Tag, counter<default_counter_size, Tag>()>>
+            struct unique_type {};
+        }
+    #endif
+    }
+
+    namespace
+    {
+        template<
+        #ifdef CLC_HAS_LAMBDAS_IN_UNEVALUATED_CONTEXTS
+            typename Tag = decltype([]{})>
+        #else
+            typename Tag = detail::unique_type_tag,
+            typename = meta::index<Tag, counter<default_counter_size, Tag>()>>
+        #endif
+        struct variable {
+            template<typename UserDefinedTag>
+            struct revision_tag {};
+
+            template<typename UserDefinedTag, std::size_t Revision>
+            struct versioned_tag {};
+
+            template<
+                std::size_t Value,
+                typename..., // private variables:
+                    typename Tag_ = Tag,
+                    std::size_t Revision = counter<default_counter_size, revision_tag<Tag_>>(),
+                    meta::unit = clc::assign<versioned_tag<Tag_, Revision + 1>, Value>()>
+            static constexpr std::size_t assign() {
+                return Value;
+            }
+
+            template<
+                typename..., // private variables:
+                    typename Tag_ = Tag,
+                    std::size_t Revision = search<revision_tag<Tag_>>(),
+                    std::size_t Value = search<versioned_tag<Tag_, Revision>>()>
+            static constexpr std::size_t value() {
+                return Value;
+            }
+
+            template<
+                typename..., // private variables:
+                    typename Tag_ = Tag,
+                    std::size_t Revision = search<revision_tag<Tag_>>(),
+                    std::size_t Value = counter<default_counter_size, versioned_tag<Tag_, Revision>>()>
+            static constexpr std::size_t increment() {
+                return Value + 1;
+            }
+        };
     }
 }
 
