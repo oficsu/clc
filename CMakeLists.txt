@@ -1,6 +1,6 @@
 #                 Curious Loopholed Counter
 #
-#             Copyright Ofee Oficsu 2020 - 2021.
+#             Copyright Ofee Oficsu 2020 - 2022.
 # Distributed under the Boost Software License, Version 1.0.
 #     (See accompanying file LICENSE_1_0.txt or copy at
 #           https://www.boost.org/LICENSE_1_0.txt)
@@ -9,7 +9,7 @@
 
 cmake_minimum_required(VERSION 3.5)
 
-project(clc VERSION 0.0.1 LANGUAGES CXX)
+project(clc VERSION 1.0.0 LANGUAGES CXX)
 
 option(CLC_BUILD_TESTING  "Build the unit tests when BUILD_TESTING is enabled" ON)
 option(CLC_BUILD_EXAMPLES "Build examples"                                     ON)
