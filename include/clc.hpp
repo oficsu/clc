@@ -1,6 +1,6 @@
 //                 Curious Loopholed Counter
 //
-//             Copyright Ofee Oficsu 2020 - 2021.
+//             Copyright Ofee Oficsu 2020 - 2024.
 //            Copyright webreh (t.me/webreh) 2021.
 //                 Copyright Malibushko 2020.
 // Distributed under the Boost Software License, Version 1.0.
