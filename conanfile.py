@@ -6,7 +6,7 @@ from conan.tools.cmake import cmake_layout, CMake
 
 class CLCConan(ConanFile):
     name = "clc"
-    version = "1.0"
+    version = "1.0.1"
     settings = "os", "arch", "compiler", "build_type"
     exports_sources = "*"
     no_copy_source = True

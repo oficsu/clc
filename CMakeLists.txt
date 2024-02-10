@@ -9,7 +9,7 @@
 
 cmake_minimum_required(VERSION 3.5)
 
-project(clc VERSION 1.0.0 LANGUAGES CXX)
+project(clc VERSION 1.0.1 LANGUAGES CXX)
 
 option(CLC_BUILD_TESTING  "Build the unit tests when BUILD_TESTING is enabled" ON)
 option(CLC_BUILD_EXAMPLES "Build examples"                                     ON)
